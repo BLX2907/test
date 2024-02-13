@@ -171,3 +171,21 @@ class ClassifyMLP(nn.Module):
         x = self.cls(x)
         x = x.view(-1, x.shape[-1])
         return x
+    
+class ClassifyRNN(nn.Module):
+    def __init__(self, input_size, hidden_size_1, hidden_size_2, output_size, dropout):
+        super(ClassifyRNN, self).__init__()
+        self.rnn1 = nn.RNN(input_size, hidden_size_1, batch_first=True)
+        self.rnn2 = nn.RNN(hidden_size_1, hidden_size_2, batch_first=True)
+        self.dropout = nn.Dropout(dropout)
+        self.cls = nn.Linear(hidden_size_2, output_size)
+
+    def forward(self, x):
+        batch_size = x.size(0)
+        out, _ = self.rnn1(x)
+        out, _ = self.rnn2(out)
+        out = self.dropout(out)
+        out = out.contiguous().view(-1, out.size(-1))  # Flattening the tensor
+        out = self.cls(out)
+        return out
+    
