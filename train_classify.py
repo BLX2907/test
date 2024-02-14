@@ -6,11 +6,10 @@ from dataset import get_data_mtl
 from dataset import ClassifyDataset
 from trainer.classify_trainer import ClassifyTrainer
 from net import (
-    ClassifyRNN,
+    ClassifyGRU,
     cls_metric,
     cls_loss_fn
 )
-
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Hyper parameters for training")
@@ -57,7 +56,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Initialize the PyTorch model
-    model = ClassifyRNN(
+    model = ClassifyGRU(
         input_size=args.input_dim,
         hidden_size_1=args.n_hidden_1,
         hidden_size_2=args.n_hidden_2,
