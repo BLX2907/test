@@ -6,7 +6,7 @@ from dataset import get_data_mtl
 from dataset import RegressionDataset
 from trainer.regression_trainer import RegressionTrainer
 from net import (
-    RegressionLSTM,
+    RegressionRNN,
     reg_loss_fn,
     reg_metric
 )
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Initialize the PyTorch model
-    model = RegressionLSTM(
+    model = RegressionRNN(
         input_size=args.input_dim,
         hidden_size_1=args.n_hidden_1,
         hidden_size_2=args.n_hidden_2,
