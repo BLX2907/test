@@ -71,10 +71,15 @@ if __name__ == "__main__":
     )
     model = model.to(device)
 
-    optimizer = torch.optim.Adam(
+    # optimizer = torch.optim.Adam(
+    #     params=model.parameters(),
+    #     lr=args.learning_rate
+    # )
+    optimizer = torch.optim.SGD(
         params=model.parameters(),
         lr=args.learning_rate
     )
+    
 
     print("Training info:\n")
     print("- Train data: {} samples".format(len(train_dataset)))
