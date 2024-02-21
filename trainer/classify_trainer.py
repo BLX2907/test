@@ -156,8 +156,8 @@ class ClassifyTrainer(BaseTrainer):
             
             # cls_output = model(x,seq_lens)
             cls_output = model(x)
-            # y_cls = y_cls[:, 0]
-            y_cls = y_cls.view(-1)
+            y_cls = y_cls[:, 0]
+            # y_cls = y_cls.view(-1)
             
             # print(f"Input batch_size during training: {cls_output.shape}")
             # print(f"Target batch_size during training: {y_cls.size(0)}")
@@ -210,8 +210,8 @@ class ClassifyTrainer(BaseTrainer):
                 # print(f"Batch size: {batch_size}, Sequence length: {seq_length}")
                 seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
                 
-                y_cls = y_cls.view(-1)
-                # y_cls = y_cls[:, 0]
+                # y_cls = y_cls.view(-1)
+                y_cls = y_cls[:, 0]
                 # cls_output = model(x,seq_lens)
                 cls_output = model(x)
                 

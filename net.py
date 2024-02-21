@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from torch.nn.utils import weight_norm
 from torch import nn
 from sklearn.metrics import accuracy_score, f1_score
 
@@ -393,19 +394,76 @@ class ClassifyCNN(nn.Module):
         return x
     
     
-class ClassifyFCN(nn.Module):
-    def __init__(self, input_size, hidden_size_1, hidden_size_2, output_size, dropout):
-        super(ClassifyFCN, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size_1)  # First fully connected layer
-        self.fc2 = nn.Linear(hidden_size_1, hidden_size_2)  # Second fully connected layer
-        self.fc3 = nn.Linear(hidden_size_2, output_size)  # Output layer
-        self.dropout = nn.Dropout(dropout)
+    
+
+
+
+class Chomp1d(nn.Module):
+    def __init__(self, chomp_size):
+        super(Chomp1d, self).__init__()
+        self.chomp_size = chomp_size
 
     def forward(self, x):
-        # Reshape input to treat each [x, y, z] data point as an independent sample
-        x = x.view(-1, 3)  # Reshape from [48, 300, 3] to [14400, 3]
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.dropout(x)
-        x = self.fc3(x)
-        return x
+        return x[:, :, :-self.chomp_size].contiguous()
+
+class TemporalBlock(nn.Module):
+    def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, padding, dropout=0.2):
+        super(TemporalBlock, self).__init__()
+        self.conv1 = weight_norm(nn.Conv1d(n_inputs, n_outputs, kernel_size,
+                                            stride=stride, padding=padding, dilation=dilation))
+        self.chomp1 = Chomp1d(padding)
+        self.relu1 = nn.ReLU()
+        self.dropout1 = nn.Dropout(dropout)
+
+        self.conv2 = weight_norm(nn.Conv1d(n_outputs, n_outputs, kernel_size,
+                                            stride=stride, padding=padding, dilation=dilation))
+        self.chomp2 = Chomp1d(padding)
+        self.relu2 = nn.ReLU()
+        self.dropout2 = nn.Dropout(dropout)
+
+        self.net = nn.Sequential(self.conv1, self.chomp1, self.relu1, self.dropout1,
+                                    self.conv2, self.chomp2, self.relu2, self.dropout2)
+        self.downsample = nn.Conv1d(n_inputs, n_outputs, 1) if n_inputs != n_outputs else None
+        self.relu = nn.ReLU()
+        self.init_weights()
+
+    def init_weights(self):
+        self.conv1.weight.data.normal_(0, 0.01)
+        self.conv2.weight.data.normal_(0, 0.01)
+        if self.downsample is not None:
+            self.downsample.weight.data.normal_(0, 0.01)
+
+    def forward(self, x):
+        out = self.net(x)
+        res = x if self.downsample is None else self.downsample(x)
+        return self.relu(out + res)
+
+class TemporalConvNet(nn.Module):
+    def __init__(self, num_inputs, num_channels, kernel_size=2, dropout=0.2):
+        super(TemporalConvNet, self).__init__()
+        layers = []
+        num_levels = len(num_channels)
+        for i in range(num_levels):
+            dilation_size = 2 ** i
+            in_channels = num_inputs if i == 0 else num_channels[i-1]
+            out_channels = num_channels[i]
+            layers += [TemporalBlock(in_channels, out_channels, kernel_size, stride=1, dilation=dilation_size,
+                                     padding=(kernel_size-1) * dilation_size, dropout=dropout)]
+
+        self.network = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.network(x)
+
+class ClassifyTCN(nn.Module):
+    def __init__(self, input_size, num_channels, output_size, kernel_size, dropout):
+        super(ClassifyTCN, self).__init__()
+        self.tcn = TemporalConvNet(num_inputs=input_size, num_channels=num_channels, kernel_size=kernel_size, dropout=dropout)
+        self.linear = nn.Linear(num_channels[-1], output_size)
+
+    def forward(self, x):
+        x = x.view(-1, x.size(2), x.size(1))  # Reshape to [batch_size * 300, 3, 48]
+        y = self.tcn(x)  # TCN
+        y = y[:, :, -1]  # Take last output for prediction
+        y = self.linear(y)
+        return y
