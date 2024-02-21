@@ -300,8 +300,8 @@ class SELayer(nn.Module):
 
 class MLSTMfcn(nn.Module):
     def __init__(self, *, num_classes, max_seq_len, num_features,
-                    num_lstm_out=128, num_lstm_layers=2, 
-                    conv1_nf=128, conv2_nf=256, conv3_nf=128,
+                    num_lstm_out=128, num_lstm_layers=1, 
+                    conv1_nf=64, conv2_nf=128, conv3_nf=64,
                     lstm_drop_p=0.8, fc_drop_p=0.3):
         super(MLSTMfcn, self).__init__()
 
