@@ -6,8 +6,8 @@ from dataset import get_data_mtl
 from dataset import ClassifyDataset
 from trainer.classify_trainer import ClassifyTrainer
 from net import (
-    MLSTMfcn,
-    # ClassifyRNN,
+    # MLSTMfcn,
+    ClassifyCNN,
     cls_metric,
     cls_loss_fn
 )
@@ -58,21 +58,21 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Initialize the PyTorch model
-    # model = ClassifyRNN(
-    #     input_size=args.input_dim,
-    #     hidden_size_1=args.n_hidden_1,
-    #     hidden_size_2=args.n_hidden_2,
-    #     output_size=args.n_classes,
-    #     dropout=args.p_dropout
-    # )
-    # model = model.to(device)
-    model = MLSTMfcn(
-        num_classes=12,             # Output size
-        max_seq_len=100,            # Placeholder value, adjust as needed
-        num_features=3,             # Input size
-        num_lstm_out=128,           # Hidden size 1 (for LSTM)
-    ) 
+    model = ClassifyCNN(
+        input_size=args.input_dim,
+        hidden_size_1=args.n_hidden_1,
+        hidden_size_2=args.n_hidden_2,
+        output_size=args.n_classes,
+        dropout=args.p_dropout
+    )
     model = model.to(device)
+    # model = MLSTMfcn(
+    #     num_classes=12,             # Output size
+    #     max_seq_len=100,            # Placeholder value, adjust as needed
+    #     num_features=3,             # Input size
+    #     num_lstm_out=128,           # Hidden size 1 (for LSTM)
+    # ) 
+    # model = model.to(device)
     
     optimizer = torch.optim.Adam(
         params=model.parameters(),

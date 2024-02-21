@@ -301,7 +301,7 @@ class SELayer(nn.Module):
 class MLSTMfcn(nn.Module):
     def __init__(self, *, num_classes, max_seq_len, num_features,
                     num_lstm_out=128, num_lstm_layers=1, 
-                    conv1_nf=64, conv2_nf=128, conv3_nf=64,
+                    conv1_nf=128, conv2_nf=256, conv3_nf=128,
                     lstm_drop_p=0.8, fc_drop_p=0.3):
         super(MLSTMfcn, self).__init__()
 
@@ -353,10 +353,7 @@ class MLSTMfcn(nn.Module):
         x1, (ht,ct) = self.lstm(x1)
         x1, _ = nn.utils.rnn.pad_packed_sequence(x1, batch_first=True, 
                                                     padding_value=0.0)
-        
-        # x1 = x1[:,-1,:]
-        x1 = self.lstmDrop(x1[:,-1,:])
-        
+        x1 = x1[:,-1,:]
         x2 = x.transpose(2,1)
         x2 = self.convDrop(self.relu(self.bn1(self.conv1(x2))))
         x2 = self.se1(x2)
@@ -366,6 +363,32 @@ class MLSTMfcn(nn.Module):
         x2 = torch.mean(x2,2)
         x_all = torch.cat((x1,x2),dim=1)
         x_out = self.fc(x_all)
-        # x_out = F.log_softmax(x_out, dim=1)
+        x_out = F.log_softmax(x_out, dim=1)
 
         return x_out
+    
+    
+    
+class ClassifyCNN(nn.Module):
+    def __init__(self, input_size, hidden_size_1, hidden_size_2, output_size, dropout):
+        super(ClassifyCNN, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=input_size, out_channels=hidden_size_1, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv1d(in_channels=hidden_size_1, out_channels=hidden_size_2, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(hidden_size_2 * 75, 512)  # Tính toán kích thước đầu ra từ Convolutional Layers
+        self.fc2 = nn.Linear(512, output_size)
+        self.relu = nn.ReLU()
+        self.maxpool = nn.MaxPool1d(kernel_size=2, stride=2)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = x.permute(0, 2, 1)
+        x = self.relu(self.conv1(x))
+        x = self.maxpool(x)
+        x = self.relu(self.conv2(x))
+        x = self.maxpool(x)
+        x = x.view(x.size(0), -1)  # flatten
+        x = self.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
+
