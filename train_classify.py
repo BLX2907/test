@@ -6,7 +6,7 @@ from dataset import get_data_mtl
 from dataset import ClassifyDataset
 from trainer.classify_trainer import ClassifyTrainer
 from net import (
-    MLSTMfcn2,
+    MLSTMfcn,
     # ClassifyRNN,
     cls_metric,
     cls_loss_fn
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     #     dropout=args.p_dropout
     # )
     # model = model.to(device)
-    model = MLSTMfcn2(
+    model = MLSTMfcn(
         num_classes=12,             # Output size
         max_seq_len=100,            # Placeholder value, adjust as needed
         num_features=3,             # Input size
