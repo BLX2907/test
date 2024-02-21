@@ -469,6 +469,45 @@ class ClassifyTCN(nn.Module):
         return y
     
 
+
+
+class TCNLayer(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, dilation):
+        super(TCNLayer, self).__init__()
+        self.conv = nn.Conv1d(in_channels, out_channels, kernel_size, stride=stride, padding=(kernel_size-1) * dilation, dilation=dilation)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.relu(x)
+        return x
+
+class RegressionTCN(nn.Module):
+    def __init__(self, input_channels, num_channels, kernel_size, output_size, dropout):
+        super(RegressionTCN, self).__init__()
+        layers = []
+        num_levels = len(num_channels)
+        for i in range(num_levels):
+            dilation_size = 2 ** i
+            in_channels = input_channels if i == 0 else num_channels[i-1]
+            out_channels = num_channels[i]
+            layers += [TCNLayer(in_channels, out_channels, kernel_size, stride=1, dilation=dilation_size)]
+
+        self.tcn = nn.Sequential(*layers)
+        self.fc = nn.Linear(num_channels[-1], output_size)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = x.permute(0, 2, 1)  # Change shape to [batch_size, features, seq_len]
+        x = self.tcn(x)
+        x = F.avg_pool1d(x, kernel_size=x.size()[2])  # Global average pooling
+        x = x.view(x.size(0), -1)
+        x = self.dropout(x)
+        x = self.fc(x)
+        x = x.squeeze(-1)  # Squeeze the tensor to remove the last dimension
+        return x
+    
+
 class RegressionFCN(nn.Module):
     def __init__(self, input_size, hidden_size_1, hidden_size_2, dropout):
         super(RegressionFCN, self).__init__()
@@ -486,3 +525,5 @@ class RegressionFCN(nn.Module):
         x = x.view(-1, 300) 
         x = torch.mean(x, dim=1)  
         return x
+    
+    

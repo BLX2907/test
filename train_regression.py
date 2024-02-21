@@ -6,7 +6,7 @@ from dataset import get_data_mtl
 from dataset import RegressionDataset
 from trainer.regression_trainer import RegressionTrainer
 from net import (
-    RegressionFCN,
+    RegressionTCN,
     reg_loss_fn,
     reg_metric
 )
@@ -56,15 +56,24 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # Initialize the PyTorch model
-    model = RegressionFCN(
-        input_size=args.input_dim,
-        hidden_size_1=args.n_hidden_1,
-        hidden_size_2=args.n_hidden_2,
-        # output_size=args.n_classes,
-        dropout=args.p_dropout
+
+    model = RegressionTCN (
+        input_channels = 3,
+        num_channels = [64, 128],  # Number of channels for each layer of the TCN
+        kernel_size = 3,
+        output_size = 1,
+        dropout = 0.25
     )
     model = model.to(device)
+    # Initialize the PyTorch model
+    # model = RegressionFCN(
+    #     input_size=args.input_dim,
+    #     hidden_size_1=args.n_hidden_1,
+    #     hidden_size_2=args.n_hidden_2,
+    #     # output_size=args.n_classes,
+    #     dropout=args.p_dropout
+    # )
+    # model = model.to(device)
 
     optimizer = torch.optim.Adam(
         params=model.parameters(),
