@@ -363,6 +363,6 @@ class MLSTMfcn(nn.Module):
         x2 = torch.mean(x2,2)
         x_all = torch.cat((x1,x2),dim=1)
         x_out = self.fc(x_all)
-        x_out = F.log_softmax(x_out, dim=1)
+        # x_out = F.log_softmax(x_out, dim=1)
 
         return x_out
