@@ -302,7 +302,7 @@ class MLSTMfcn(nn.Module):
     def __init__(self, *, num_classes, max_seq_len, num_features,
                     num_lstm_out=128, num_lstm_layers=2, 
                     conv1_nf=128, conv2_nf=256, conv3_nf=128,
-                    lstm_drop_p=0.25, fc_drop_p=0.3):
+                    lstm_drop_p=0.8, fc_drop_p=0.3):
         super(MLSTMfcn, self).__init__()
 
         self.num_classes = num_classes
@@ -353,7 +353,10 @@ class MLSTMfcn(nn.Module):
         x1, (ht,ct) = self.lstm(x1)
         x1, _ = nn.utils.rnn.pad_packed_sequence(x1, batch_first=True, 
                                                     padding_value=0.0)
-        x1 = x1[:,-1,:]
+        
+        # x1 = x1[:,-1,:]
+        x1 = self.lstmDrop(x1[:,-1,:])
+        
         x2 = x.transpose(2,1)
         x2 = self.convDrop(self.relu(self.bn1(self.conv1(x2))))
         x2 = self.se1(x2)
