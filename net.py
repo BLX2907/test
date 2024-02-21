@@ -391,4 +391,21 @@ class ClassifyCNN(nn.Module):
         x = self.dropout(x)
         x = self.fc2(x)
         return x
+    
+    
+class ClassifyFCN(nn.Module):
+    def __init__(self, input_size, hidden_size_1, hidden_size_2, output_size, dropout):
+        super(ClassifyFCN, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size_1)  # First fully connected layer
+        self.fc2 = nn.Linear(hidden_size_1, hidden_size_2)  # Second fully connected layer
+        self.fc3 = nn.Linear(hidden_size_2, output_size)  # Output layer
+        self.dropout = nn.Dropout(dropout)
 
+    def forward(self, x):
+        # Reshape input to treat each [x, y, z] data point as an independent sample
+        x = x.view(-1, 3)  # Reshape from [48, 300, 3] to [14400, 3]
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.dropout(x)
+        x = self.fc3(x)
+        return x
