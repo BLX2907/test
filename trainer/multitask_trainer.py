@@ -1,6 +1,9 @@
 import os
 import wandb
 import torch
+import torch.nn.utils
+
+from torch.optim.lr_scheduler import StepLR
 from tqdm import tqdm
 
 from utils import save_json
@@ -58,6 +61,7 @@ class MultitaskTrainer(BaseTrainer):
             colour="green",
             desc="Training"
         )
+        scheduler = StepLR(self.optimizer, step_size=30, gamma=0.1)
         for epoch in pbar:
             train_log = self._inner_training_loop(
                 train_dataloader=self.train_dataloader,
@@ -119,6 +123,7 @@ class MultitaskTrainer(BaseTrainer):
                 )
                 self.save_checkpoint(checkpoint_path=checkpoint_path)
                 
+            scheduler.step()
             # Save best multitask checkpoint 
             if test_log["Test Loss"] > min_loss:
                 patient += 1
@@ -188,14 +193,17 @@ class MultitaskTrainer(BaseTrainer):
         model.train()
         step = 0
         for x, y_cls, y_reg in train_dataloader:
-            reg_output, cls_output = model(x)
+            cls_output, reg_output = model(x)
             reg_loss = reg_loss_fn(reg_output, y_reg)
-            y_cls = y_cls.view(-1)
+            # y_cls = y_cls.view(-1)
+            y_cls = y_cls[:, 0]
             cls_loss = cls_loss_fn(cls_output, y_cls)
             
             loss = reg_loss + cls_loss
             optimizer.zero_grad()
             loss.backward()
+
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             
             
@@ -249,8 +257,9 @@ class MultitaskTrainer(BaseTrainer):
         model.eval()
         with torch.no_grad():
             for x, y_cls, y_reg in test_dataloader:
-                y_cls = y_cls.view(-1)
-                reg_output, cls_output = model(x)
+                # y_cls = y_cls.view(-1)
+                y_cls = y_cls[:, 0]
+                cls_output, reg_output = model(x)
                 reg_loss = compute_reg_loss(reg_output, y_reg)
                 cls_loss = compute_cls_loss(cls_output, y_cls)
                 

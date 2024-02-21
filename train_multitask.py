@@ -7,7 +7,7 @@ from dataset import MultitaskDataset
 # from trainer import MultitaskTrainer
 from trainer.multitask_trainer import MultitaskTrainer
 from net import (
-    MultitaskRNN,
+    MultitaskTCN,
     cls_metric,
     cls_loss_fn,
     reg_loss_fn,
@@ -62,19 +62,33 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Initialize the PyTorch model
-    model = MultitaskRNN(
-        input_size=args.input_dim,
-        hidden_size_1=args.n_hidden_1,
-        hidden_size_2=args.n_hidden_2,
-        output_size=args.n_classes,
-        dropout=args.p_dropout
-    )
+    # model = MultitaskRNN(
+    #     input_size=args.input_dim,
+    #     hidden_size_1=args.n_hidden_1,
+    #     hidden_size_2=args.n_hidden_2,
+    #     output_size=args.n_classes,
+    #     dropout=args.p_dropout
+    # )
+    # model = model.to(device)
+    
+    input_size = 3  # Number of input features
+    num_channels = [64, 128]  # Channels in TCN layers
+    output_size_cls = 12  # Number of classes for classification
+    output_size_reg = 1  # Output size for regression (predicting a single value)
+    kernel_size = 2  # Kernel size for TCN
+    dropout = 0.2  # Dropout rate
+    model = MultitaskTCN(input_size, num_channels, output_size_cls, output_size_reg, kernel_size, dropout)
     model = model.to(device)
 
-    optimizer = torch.optim.Adam(
+    # optimizer = torch.optim.Adam(
+    #     params=model.parameters(),
+    #     lr=args.learning_rate
+    # )
+    optimizer = torch.optim.SGD(
         params=model.parameters(),
         lr=args.learning_rate
     )
+    
 
     print("Training info:\n")
     print("- Train data: {} samples".format(len(train_dataset)))

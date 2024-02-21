@@ -467,7 +467,24 @@ class ClassifyTCN(nn.Module):
         y = y[:, :, -1]  # Take last output for prediction
         y = self.linear(y)
         return y
-    
+
+class MultitaskTCN(nn.Module):
+    def __init__(self, input_size, num_channels, output_size_cls, output_size_reg, kernel_size, dropout):
+        super(MultitaskTCN, self).__init__()
+        self.tcn = TemporalConvNet(num_inputs=input_size, num_channels=num_channels, kernel_size=kernel_size, dropout=dropout)
+        # Classifier head
+        self.linear_cls = nn.Linear(num_channels[-1], output_size_cls)
+        # Regression head
+        self.linear_reg = nn.Linear(num_channels[-1], output_size_reg)
+
+    def forward(self, x):
+        x = x.permute(0, 2, 1)  
+        y = self.tcn(x)  
+        cls_out = self.linear_cls(y[:, :, -1]) 
+        avg_pool = F.avg_pool1d(y, kernel_size=y.size()[2]).squeeze(-1)
+        reg_out = self.linear_reg(avg_pool).squeeze(-1)
+        
+        return cls_out, reg_out
 
 
 
