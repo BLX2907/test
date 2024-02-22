@@ -123,7 +123,23 @@ class ClassifyMLP(nn.Module):
         x = self.cls(x)
         x = x.view(-1, x.shape[-1])
         return x
-    
+
+# ----------------- GRU -------------------------
+
+class RegressionGRU(nn.Module):
+    def __init__(self, input_size, hidden_size_1, hidden_size_2, output_size, dropout):
+        super(RegressionGRU, self).__init__()
+        self.gru1 = nn.GRU(input_size, hidden_size_1, batch_first=True)
+        self.gru2 = nn.GRU(hidden_size_1, hidden_size_2, batch_first=True)
+        self.dropout = nn.Dropout(dropout)
+        self.reg = nn.Linear(hidden_size_2, 1)  
+
+    def forward(self, x):
+        out, _ = self.gru1(x)
+        out, _ = self.gru2(out)
+        out = self.dropout(out)
+        reg_out = self.reg(out[:, -1, :]).flatten()  
+        return reg_out
 
 class ClassifyGRU(nn.Module):
     def __init__(self, input_size, hidden_size_1, hidden_size_2, output_size, dropout):
