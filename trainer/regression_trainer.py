@@ -150,7 +150,12 @@ class RegressionTrainer(BaseTrainer):
         model.train()
         step = 0
         for x, y_reg in train_dataloader:
-            reg_output = model(x)
+            # reg_output = model(x)
+            batch_size = x.shape[0]
+            seq_length = x.shape[1]  
+            seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
+            
+            reg_output = model(x, seq_lens)
             reg_loss = reg_loss_fn(reg_output, y_reg)
             
             optimizer.zero_grad()
@@ -187,7 +192,12 @@ class RegressionTrainer(BaseTrainer):
         model.eval()
         with torch.no_grad():
             for x, y_reg in test_dataloader:
-                reg_output = model(x)
+                batch_size = x.shape[0]
+                seq_length = x.shape[1]  
+                seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
+                
+                reg_output = model(x, seq_lens)
+                # reg_output = model(x)
                 reg_loss = compute_reg_loss(reg_output, y_reg)
                 
                 total_loss_reg += reg_loss.item()
