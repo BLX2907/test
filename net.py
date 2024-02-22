@@ -369,12 +369,15 @@ class MLSTMfcn(nn.Module):
         return x_out
 # Note, sau khi giảm drop out tu 0.7 xuong 0.4, giữ nguyên cấu trúc 128 và 32-64-32, test MAE tang
 # Thu tang drop lstm len 0.75, giam num_lstm_out xuong 64
-# Thử giảm tiếp độ phức tạp của cnn, num_lstm_out=128, lstm_drop_p=0.7, fc_drop_p=0.3
+# Thử giảm tiếp độ phức tạp của cnn, num_lstm_out=128, num_lstm_layers=1, conv1_nf=16, conv2_nf=32, conv3_nf=16, lstm_drop_p=0.7, fc_drop_p=0.3 ==> best cmnr khoảng 1.7
+# =======================> sẽ thử layout này lại với task classify và implement multitask
+
+
 class RegressionMLSTMfcn(nn.Module):
     def __init__(self, *, max_seq_len, num_features,
                     num_lstm_out=128, num_lstm_layers=1, 
                     conv1_nf=16, conv2_nf=32, conv3_nf=16,
-                    lstm_drop_p=0.7, fc_drop_p=0.3):
+                    lstm_drop_p=0.5, fc_drop_p=0.3):
         super(RegressionMLSTMfcn, self).__init__()
 
         self.max_seq_len = max_seq_len
