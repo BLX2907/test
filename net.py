@@ -245,7 +245,7 @@ class SELayer(nn.Module):
 
 # Thử 1: Ko ổn lắm
 # Thử 2: num_lstm_out=64, lstm_drop_p=0.5 ==> đớ
-# Thử cuối: giảm lstm drop out
+# Thử cuối: giảm lstm drop out + lại: bỏ softmax
 class MLSTMfcn(nn.Module):
     def __init__(self, *, num_classes, max_seq_len, num_features,
                     num_lstm_out=64, num_lstm_layers=1, 
@@ -311,7 +311,7 @@ class MLSTMfcn(nn.Module):
         x2 = torch.mean(x2,2)
         x_all = torch.cat((x1,x2),dim=1)
         x_out = self.fc(x_all)
-        x_out = F.log_softmax(x_out, dim=1)
+        # x_out = F.log_softmax(x_out, dim=1)
 
         return x_out
 # Note, sau khi giảm drop out tu 0.7 xuong 0.4, giữ nguyên cấu trúc 128 và 32-64-32, test MAE tang
