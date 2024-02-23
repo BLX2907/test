@@ -373,11 +373,12 @@ class MLSTMfcn(nn.Module):
 # =======================> sẽ thử layout này lại với task classify và implement multitask
 # Thử giảm drop out -> 0.5 ==> giảm tiếp test MAE omggggggggggg
 # Thử tăng câu trúc conv nhân đôi 32-64-32, num_lstm_out=64 ==> tăng lên test MAE: 1.931
-# Thử: tăng lại num_lstm_out = 128, num_lstm_layers=2 conv: 16-32-16
+# Thử: tăng lại num_lstm_out = 128, num_lstm_layers=2 conv: 16-32-16 ==> giảm xuống 1.7237
+# Thử: cấu trúc như trên, nhưng giảm num lstm layers = 1
 
 class RegressionMLSTMfcn(nn.Module):
     def __init__(self, *, max_seq_len, num_features,
-                    num_lstm_out=124, num_lstm_layers=2, 
+                    num_lstm_out=128, num_lstm_layers=1, 
                     conv1_nf=16, conv2_nf=32, conv3_nf=16,
                     lstm_drop_p=0.5, fc_drop_p=0.3):
         super(RegressionMLSTMfcn, self).__init__()
