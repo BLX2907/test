@@ -375,14 +375,16 @@ class MLSTMfcn(nn.Module):
 # Thử tăng câu trúc conv nhân đôi 32-64-32, num_lstm_out=64 ==> tăng lên test MAE: 1.931
 # Thử: tăng lại num_lstm_out = 128, num_lstm_layers=2 conv: 16-32-16 ==> giảm xuống 1.7237
 # Thử: cấu trúc như trên, nhưng giảm num lstm layers = 1  ver 7  ==> khoảng 1.71 ==> Turn out to be the best
-# Thử: tăng cấu trúc conv 32-64-32, giảm lstm drop out xuống 0.45 ver 8 ==> 1.73 tăng lên ???
+# Thử: tăng cấu trúc conv 32-64-32, giảm lstm drop out xuống 0.45 ver 8 ==> 2.0 ????????
+# Kết luận chung, cấu trúc nên là 16-32-16
+# Thử từ the best: thử với lstm drop out là 0.4
 
 
 class RegressionMLSTMfcn(nn.Module):
     def __init__(self, *, max_seq_len, num_features,
                     num_lstm_out=128, num_lstm_layers=1, 
-                    conv1_nf=32, conv2_nf=64, conv3_nf=32,
-                    lstm_drop_p=0.45, fc_drop_p=0.3):
+                    conv1_nf=16, conv2_nf=32, conv3_nf=16,
+                    lstm_drop_p=0.4, fc_drop_p=0.3):
         super(RegressionMLSTMfcn, self).__init__()
 
         self.max_seq_len = max_seq_len
