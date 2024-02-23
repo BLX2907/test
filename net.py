@@ -298,12 +298,12 @@ class SELayer(nn.Module):
         y = self.fc(y).view(b, c, 1)
         return x * y.expand_as(x)
 
-
+# Thử 1: 
 class MLSTMfcn(nn.Module):
     def __init__(self, *, num_classes, max_seq_len, num_features,
                     num_lstm_out=128, num_lstm_layers=1, 
-                    conv1_nf=128, conv2_nf=256, conv3_nf=128,
-                    lstm_drop_p=0.8, fc_drop_p=0.3):
+                    conv1_nf=16, conv2_nf=32, conv3_nf=16,
+                    lstm_drop_p=0.4, fc_drop_p=0.3):
         super(MLSTMfcn, self).__init__()
 
         self.num_classes = num_classes
