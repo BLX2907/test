@@ -246,11 +246,12 @@ class SELayer(nn.Module):
 # Thử 1: Ko ổn lắm
 # Thử 2: num_lstm_out=64, lstm_drop_p=0.5 ==> đớ
 # Thử cuối: giảm lstm drop out + lại: bỏ softmax
+# Thử cuối: tăng 2 drop out lên 0.6 + 0.5
 class MLSTMfcn(nn.Module):
     def __init__(self, *, num_classes, max_seq_len, num_features,
-                    num_lstm_out=64, num_lstm_layers=1, 
+                    num_lstm_out=128, num_lstm_layers=1, 
                     conv1_nf=16, conv2_nf=32, conv3_nf=16,
-                    lstm_drop_p=0.4, fc_drop_p=0.3):
+                    lstm_drop_p=0.6, fc_drop_p=0.5):
         super(MLSTMfcn, self).__init__()
 
         self.num_classes = num_classes
