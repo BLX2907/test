@@ -148,7 +148,7 @@ class ClassifyTrainer(BaseTrainer):
         model.train()
         step = 0
         for x, y_cls in train_dataloader:
-            print(f"x train shape {x.shape}")
+            # print(f"x train shape {x.shape}")
             batch_size = x.shape[0]
             seq_length = x.shape[1]  
             # print(f"Batch size: {batch_size}, Sequence length: {seq_length}")
@@ -204,7 +204,7 @@ class ClassifyTrainer(BaseTrainer):
         model.eval()
         with torch.no_grad():
             for x, y_cls in test_dataloader:
-                print(f"x evaluate shape {x.shape}")
+                # print(f"x evaluate shape {x.shape}")
                 batch_size = x.shape[0] 
                 seq_length = x.shape[1]  
                 # print(f"Batch size: {batch_size}, Sequence length: {seq_length}")
