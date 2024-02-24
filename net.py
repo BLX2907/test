@@ -207,22 +207,6 @@ class MultitaskRNN(nn.Module):
     
     
 
-class SELayer(nn.Module):
-    def __init__(self, channel, reduction=16):
-        super(SELayer, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool1d(1)
-        self.fc = nn.Sequential(
-            nn.Linear(channel, channel // reduction, bias=False),
-            nn.ReLU(inplace=True),
-            nn.Linear(channel // reduction, channel, bias=False),
-            nn.Sigmoid()
-        )
-
-    def forward(self, x):
-        b, c, _ = x.size()
-        y = self.avg_pool(x).view(b, c)
-        y = self.fc(y).view(b, c, 1)
-        return x * y.expand_as(x)
 
 #------------------ MLSTM-FCN ----------------------
 
@@ -317,6 +301,7 @@ class ClassifyMLSTMfcn(nn.Module):
         # x_out = F.log_softmax(x_out, dim=1)
 
         return x_out
+    
 # Note, sau khi giảm drop out tu 0.7 xuong 0.4, giữ nguyên cấu trúc 128 và 32-64-32, test MAE tang
 # Thu tang drop lstm len 0.75, giam num_lstm_out xuong 64
 # Thử giảm tiếp độ phức tạp của cnn, num_lstm_out=128, num_lstm_layers=1, conv1_nf=16, conv2_nf=32, conv3_nf=16, lstm_drop_p=0.7, fc_drop_p=0.3 ==> best cmnr khoảng 1.7
@@ -393,12 +378,13 @@ class RegressionMLSTMfcn(nn.Module):
 
 # Test 1: Bị đứng nguyên ở các số liệu
 # Test 2: ver 2: lstm_drop_p=0.4, fc_drop_p=0.3 ==> lstm_drop_p=0.7, fc_drop_p=0.6
-    
+# Test 3: ver 3: tăng lên conv1_nf=32, conv2_nf=64, conv3_nf=32
+
 class MultitaskMLSTMfcn(nn.Module):
     def __init__(self, *, num_classes, max_seq_len, num_features,
                     num_lstm_out=128, num_lstm_layers=1, 
-                    conv1_nf=16, conv2_nf=32, conv3_nf=16,
-                    lstm_drop_p=0.7, fc_drop_p=0.6):
+                    conv1_nf=32, conv2_nf=64, conv3_nf=32,
+                    lstm_drop_p=0.7, fc_drop_p=0.65):
         super(MultitaskMLSTMfcn, self).__init__()
 
         # Common attributes
