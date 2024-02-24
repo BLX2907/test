@@ -203,8 +203,6 @@ class MultitaskTrainer(BaseTrainer):
             cls_output, reg_output = model(x, seq_lens)
             
             reg_loss = reg_loss_fn(reg_output, y_reg)
-            # y_cls = y_cls.view(-1)
-            y_cls = y_cls[:, 0]
             cls_loss = cls_loss_fn(cls_output, y_cls)
             
             loss = reg_loss + cls_loss
