@@ -193,7 +193,15 @@ class MultitaskTrainer(BaseTrainer):
         model.train()
         step = 0
         for x, y_cls, y_reg in train_dataloader:
-            cls_output, reg_output = model(x)
+            batch_size = x.shape[0]
+            seq_length = x.shape[1]  
+            seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
+            
+            # y_cls = y_cls.view(-1)
+            y_cls = y_cls[:, 0]
+            # cls_output, reg_output = model(x)
+            cls_output, reg_output = model(x, seq_lens)
+            
             reg_loss = reg_loss_fn(reg_output, y_reg)
             # y_cls = y_cls.view(-1)
             y_cls = y_cls[:, 0]
@@ -257,9 +265,15 @@ class MultitaskTrainer(BaseTrainer):
         model.eval()
         with torch.no_grad():
             for x, y_cls, y_reg in test_dataloader:
+                batch_size = x.shape[0]
+                seq_length = x.shape[1]  
+                seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
+                
                 # y_cls = y_cls.view(-1)
                 y_cls = y_cls[:, 0]
-                cls_output, reg_output = model(x)
+                # cls_output, reg_output = model(x)
+                cls_output, reg_output = model(x, seq_lens)
+                
                 reg_loss = compute_reg_loss(reg_output, y_reg)
                 cls_loss = compute_cls_loss(cls_output, y_cls)
                 

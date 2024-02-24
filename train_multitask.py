@@ -7,7 +7,7 @@ from dataset import MultitaskDataset
 # from trainer import MultitaskTrainer
 from trainer.multitask_trainer import MultitaskTrainer
 from net import (
-    MultitaskTCN,
+    MultitaskMLSTMfcn,
     cls_metric,
     cls_loss_fn,
     reg_loss_fn,
@@ -71,23 +71,31 @@ if __name__ == "__main__":
     # )
     # model = model.to(device)
     
-    input_size = 3  # Number of input features
-    num_channels = [64, 128]  # Channels in TCN layers
-    output_size_cls = 12  # Number of classes for classification
-    output_size_reg = 1  # Output size for regression (predicting a single value)
-    kernel_size = 2  # Kernel size for TCN
-    dropout = 0.2  # Dropout rate
-    model = MultitaskTCN(input_size, num_channels, output_size_cls, output_size_reg, kernel_size, dropout)
-    model = model.to(device)
+    # input_size = 3  # Number of input features
+    # num_channels = [64, 128]  # Channels in TCN layers
+    # output_size_cls = 12  # Number of classes for classification
+    # output_size_reg = 1  # Output size for regression (predicting a single value)
+    # kernel_size = 2  # Kernel size for TCN
+    # dropout = 0.2  # Dropout rate
+    # model = MultitaskTCN(input_size, num_channels, output_size_cls, output_size_reg, kernel_size, dropout)
+    # model = model.to(device)
+    
+    model = MultitaskMLSTMfcn(
+        max_seq_len=100,            # Giá trị tùy chỉnh
+        num_features=3,             # Số đặc trưng đầu vào
+        num_lstm_out=128,           # Kích thước đầu ra LSTM
+        num_classes=12
+    )
+    model.to(device)
 
-    # optimizer = torch.optim.Adam(
-    #     params=model.parameters(),
-    #     lr=args.learning_rate
-    # )
-    optimizer = torch.optim.SGD(
+    optimizer = torch.optim.Adam(
         params=model.parameters(),
         lr=args.learning_rate
     )
+    # optimizer = torch.optim.SGD(
+    #     params=model.parameters(),
+    #     lr=args.learning_rate
+    # )
     
 
     print("Training info:\n")
