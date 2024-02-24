@@ -390,13 +390,15 @@ class RegressionMLSTMfcn(nn.Module):
         x_out = x_out.squeeze(-1)  # Loại bỏ chiều cuối cùng để kích thước từ [48, 1] thành [48]
 
         return x_out   
-    
+
+# Test 1: Bị đứng nguyên ở các số liệu
+# Test 2: ver 2: lstm_drop_p=0.4, fc_drop_p=0.3 ==> lstm_drop_p=0.7, fc_drop_p=0.6
     
 class MultitaskMLSTMfcn(nn.Module):
     def __init__(self, *, num_classes, max_seq_len, num_features,
                     num_lstm_out=128, num_lstm_layers=1, 
                     conv1_nf=16, conv2_nf=32, conv3_nf=16,
-                    lstm_drop_p=0.4, fc_drop_p=0.3):
+                    lstm_drop_p=0.7, fc_drop_p=0.6):
         super(MultitaskMLSTMfcn, self).__init__()
 
         # Common attributes
