@@ -197,10 +197,10 @@ class MultitaskTrainer(BaseTrainer):
             seq_length = x.shape[1]  
             seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
             
-            # y_cls = y_cls.view(-1)
-            y_cls = y_cls[:, 0]
-            # cls_output, reg_output = model(x)
-            cls_output, reg_output = model(x, seq_lens)
+            y_cls = y_cls.view(-1)
+            # y_cls = y_cls[:, 0] # for mlstmfcn
+            cls_output, reg_output = model(x)
+            # cls_output, reg_output = model(x, seq_lens)
             
             reg_loss = reg_loss_fn(reg_output, y_reg)
             cls_loss = cls_loss_fn(cls_output, y_cls)
@@ -267,10 +267,10 @@ class MultitaskTrainer(BaseTrainer):
                 seq_length = x.shape[1]  
                 seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
                 
-                # y_cls = y_cls.view(-1)
-                y_cls = y_cls[:, 0]
-                # cls_output, reg_output = model(x)
-                cls_output, reg_output = model(x, seq_lens)
+                y_cls = y_cls.view(-1)
+                # y_cls = y_cls[:, 0]
+                cls_output, reg_output = model(x)
+                # cls_output, reg_output = model(x, seq_lens)
                 
                 reg_loss = compute_reg_loss(reg_output, y_reg)
                 cls_loss = compute_cls_loss(cls_output, y_cls)
