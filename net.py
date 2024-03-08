@@ -180,7 +180,7 @@ class MultitaskGRU(nn.Module):
         reg_out = out[:, -1, :]  
         reg_out = self.reg(reg_out).squeeze()
         
-        return reg_out, cls_out
+        return cls_out, reg_out
 
 # ------------------ RNN ------------------------
 
