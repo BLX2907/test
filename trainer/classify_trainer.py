@@ -148,20 +148,8 @@ class ClassifyTrainer(BaseTrainer):
         model.train()
         step = 0
         for x, y_cls in train_dataloader:
-            # print(f"x train shape {x.shape}")
-            batch_size = x.shape[0]
-            seq_length = x.shape[1]  
-            # print(f"Batch size: {batch_size}, Sequence length: {seq_length}")
-            seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
-            
-            cls_output = model(x,seq_lens)
-            # cls_output = model(x)
-            y_cls = y_cls[:, 0]
-            # y_cls = y_cls.view(-1)
-            
-            # print(f"Input batch_size during training: {cls_output.shape}")
-            # print(f"Target batch_size during training: {y_cls.size(0)}")
-            
+            cls_output = model(x)
+            y_cls = y_cls.view(-1)
             cls_loss = cls_loss_fn(cls_output, y_cls)
             
             optimizer.zero_grad()
@@ -204,20 +192,8 @@ class ClassifyTrainer(BaseTrainer):
         model.eval()
         with torch.no_grad():
             for x, y_cls in test_dataloader:
-                # print(f"x evaluate shape {x.shape}")
-                batch_size = x.shape[0] 
-                seq_length = x.shape[1]  
-                # print(f"Batch size: {batch_size}, Sequence length: {seq_length}")
-                seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
-                
-                # y_cls = y_cls.view(-1)
-                y_cls = y_cls[:, 0]
-                cls_output = model(x,seq_lens)
-                # cls_output = model(x)
-                
-                print(f"Input batch_size during evaluating: {cls_output.shape}")
-                print(f"Target batch_size during evaluating: {y_cls.shape}")
-                
+                y_cls = y_cls.view(-1)
+                cls_output = model(x)
                 cls_loss = compute_cls_loss(cls_output, y_cls)
                 total_loss_cls += cls_loss.item()
 

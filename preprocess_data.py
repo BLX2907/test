@@ -4,8 +4,8 @@ from utils import preprocess_data, resolution
 from augment import *
 
 
-train_path = "Data\\train.csv"
-test_path = "Data\\test.csv"
+train_path = "data/cls_regr_16_person/train.csv"
+test_path = "data/cls_regr_16_person/test.csv"
 len_point = 3000
 resolution_param = 10
 col_breath_rate = "breath_rate"

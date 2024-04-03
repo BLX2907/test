@@ -1,11 +1,11 @@
 import os
 import wandb
 import torch
-import torch.nn.utils
-
-from torch.optim.lr_scheduler import StepLR
+import seaborn as sns
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
 from tqdm import tqdm
-
+sns.set()
 from utils import save_json
 from utils import pretty_print_json
 from trainer.base_trainer import BaseTrainer
@@ -13,7 +13,7 @@ from trainer.base_trainer import BaseTrainer
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class MultitaskTrainer(BaseTrainer):    
+class MultitaskTrainer(BaseTrainer):
     
     def __init__(
         self, model, train_dataset, eval_dataset,
@@ -33,6 +33,24 @@ class MultitaskTrainer(BaseTrainer):
         
 
     def train(self):
+        self.history_training = {
+            "train": {
+                "Train Loss": [],
+                "Train Loss Reg": [],
+                "Train Loss Cls": [],
+                "Train MAE": [],
+                "Train Acc": [],
+                "Train F1": []
+            },
+            "test": {
+                "Test Loss": [],
+                "Test Loss Reg": [],
+                "Test Loss Cls": [],
+                "Test MAE": [],
+                "Test Acc": [],
+                "Test F1": []
+            }
+        }
         # Evaluate before training
         test_log = self.evaluate(
             test_dataloader=self.test_dataloader,
@@ -61,7 +79,6 @@ class MultitaskTrainer(BaseTrainer):
             colour="green",
             desc="Training"
         )
-        scheduler = StepLR(self.optimizer, step_size=30, gamma=0.1)
         for epoch in pbar:
             train_log = self._inner_training_loop(
                 train_dataloader=self.train_dataloader,
@@ -72,6 +89,8 @@ class MultitaskTrainer(BaseTrainer):
                 cls_metric=self.cls_metric,
                 reg_metric=self.reg_metric
             )
+            for k in self.history_training["train"]:
+                self.history_training["train"][k].append(train_log[k])
             test_log = self.evaluate(
                     test_dataloader=self.test_dataloader,
                     model=self.model,
@@ -81,7 +100,8 @@ class MultitaskTrainer(BaseTrainer):
                     reg_metric=self.reg_metric,
                     train_log=train_log
             )
-
+            for k in self.history_training["test"]:
+                self.history_training["test"][k].append(test_log[k])
             if self.log_wandb:
                 wandb.log(test_log)
 
@@ -123,7 +143,6 @@ class MultitaskTrainer(BaseTrainer):
                 )
                 self.save_checkpoint(checkpoint_path=checkpoint_path)
                 
-            scheduler.step()
             # Save best multitask checkpoint 
             if test_log["Test Loss"] > min_loss:
                 patient += 1
@@ -160,9 +179,11 @@ class MultitaskTrainer(BaseTrainer):
             pbar.set_postfix(**records)
 
         result_training = {
-            "best_cls_log": best_cls_log,
-            "best_reg_log": best_reg_log,
-            "best_multitask_log": best_multitask_log
+            "best_metrics": {
+                "best_cls_log": best_cls_log,
+                "best_reg_log": best_reg_log,
+                "best_multitask_log": best_multitask_log
+            }
         }
         log_path = os.path.join(self.output_dir, "result_training.json") 
         save_json(
@@ -170,9 +191,27 @@ class MultitaskTrainer(BaseTrainer):
             file_path=log_path
         )
 
+        history_path = os.path.join(self.output_dir, "history_training.json")
+        save_json(
+            data=self.history_training, 
+            file_path=history_path
+        )
 
-    @staticmethod
+        self.visualize_history_training(
+            history_metrics=self.history_training["train"],
+            save_path=os.path.join(self.output_dir, "train_log.png"),
+            title="Training history",
+            n_epochs=self.epochs
+        )
+        self.visualize_history_training(
+            history_metrics=self.history_training["test"],
+            save_path=os.path.join(self.output_dir, "validate_log.png"),
+            title="Validate history",
+            n_epochs=self.epochs
+        )
+
     def _inner_training_loop(
+            self,
             train_dataloader,
             model,
             cls_loss_fn,
@@ -193,23 +232,14 @@ class MultitaskTrainer(BaseTrainer):
         model.train()
         step = 0
         for x, y_cls, y_reg in train_dataloader:
-            batch_size = x.shape[0]
-            seq_length = x.shape[1]  
-            seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
-            
-            y_cls = y_cls.view(-1)
-            # y_cls = y_cls[:, 0] # for mlstmfcn
-            cls_output, reg_output = model(x)
-            # cls_output, reg_output = model(x, seq_lens)
-            
+            reg_output, cls_output = model(x)
             reg_loss = reg_loss_fn(reg_output, y_reg)
+            y_cls = y_cls.view(-1)
             cls_loss = cls_loss_fn(cls_output, y_cls)
             
-            loss = reg_loss + cls_loss
+            loss = reg_loss + cls_loss + reg_loss
             optimizer.zero_grad()
             loss.backward()
-
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             
             
@@ -263,15 +293,8 @@ class MultitaskTrainer(BaseTrainer):
         model.eval()
         with torch.no_grad():
             for x, y_cls, y_reg in test_dataloader:
-                batch_size = x.shape[0]
-                seq_length = x.shape[1]  
-                seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
-                
                 y_cls = y_cls.view(-1)
-                # y_cls = y_cls[:, 0]
-                cls_output, reg_output = model(x)
-                # cls_output, reg_output = model(x, seq_lens)
-                
+                reg_output, cls_output = model(x)
                 reg_loss = compute_reg_loss(reg_output, y_reg)
                 cls_loss = compute_cls_loss(cls_output, y_cls)
                 
@@ -314,3 +337,32 @@ class MultitaskTrainer(BaseTrainer):
             log_result[k] = round(v, 4)
         log_result.update(train_log)
         return log_result
+    
+    def visualize_history_training(self, history_metrics, save_path, title, n_epochs):
+        all_colors = [
+            [0.6741758166170712, 0.22868885920931392, 0.2406746141609114],
+            [0.059507814505031176, 0.792092060272692, 0.7892093337887586],
+            [0.3463890703039292, 0.6354515889226895, 0.9495167990408476],
+            [0.6590696515728108, 0.09209113056341345, 0.572954686134253],
+            [0.6000209199288403, 0.5327399348368033, 0.8311295309445689],
+            [0.1695333359497634, 0.6360509540985432, 0.13766664393429084]
+        ]
+        epochs = list(range(1, n_epochs + 1))
+        metrics = list(history_metrics.keys())
+        num_metrics = len(metrics)
+        ncols = 3
+        nrows = 2
+        fig, axes = plt.subplots(nrows, ncols, figsize=(30, nrows * 5))
+        fig.suptitle(title, fontsize=16)
+        # Plotting training and testing metrics
+        for idx, metric in enumerate(history_metrics):
+            row = idx // ncols
+            col = idx % ncols
+            ax = axes[row, col]
+            ax.plot(epochs, history_metrics[metric], marker='o', label='Training', color=all_colors[idx])
+            ax.set_xlabel('Epochs')
+            ax.set_ylabel(metric)
+            ax.grid(True)
+
+        fig.savefig(save_path)
+        plt.close(fig)

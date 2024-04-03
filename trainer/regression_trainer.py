@@ -7,8 +7,6 @@ from utils import save_json
 from utils import pretty_print_json
 from trainer.base_trainer import BaseTrainer
 
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -27,7 +25,7 @@ class RegressionTrainer(BaseTrainer):
         )
         self.reg_loss_fn = reg_loss_fn
         self.reg_metric = reg_metric
-        self.scheduler = ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, patience=5, verbose=True)
+        
 
     def train(self):
         # Evaluate before training
@@ -69,9 +67,7 @@ class RegressionTrainer(BaseTrainer):
                 reg_metric=self.reg_metric,
                     train_log=train_log
             )
-            self.scheduler.step(test_log["Test MAE"])
-            
-            
+
             if self.log_wandb:
                 wandb.log(test_log)
 
@@ -117,12 +113,9 @@ class RegressionTrainer(BaseTrainer):
                     "best_multitask.pth"
                 )
                 self.save_checkpoint(checkpoint_path=checkpoint_path)
-                
-            # Add early stopping
-            # if patient > 100:
-            #     print(f"Early stopping at epoch {epoch + 1}!")
-            #     break
-            
+        #     if patient > 100:
+        #         print(f"Early stopping at epoch {epoch + 1}!")
+        #         break
             records = {
                 "min_mae_test": round(min_mae, 2),
                 "min_loss_test": round(min_loss, 2),
@@ -157,12 +150,6 @@ class RegressionTrainer(BaseTrainer):
         model.train()
         step = 0
         for x, y_reg in train_dataloader:
-            # reg_output = model(x)
-            batch_size = x.shape[0]
-            seq_length = x.shape[1]  
-            seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
-            
-            # reg_output = model(x, seq_lens)
             reg_output = model(x)
             reg_loss = reg_loss_fn(reg_output, y_reg)
             
@@ -200,11 +187,6 @@ class RegressionTrainer(BaseTrainer):
         model.eval()
         with torch.no_grad():
             for x, y_reg in test_dataloader:
-                batch_size = x.shape[0]
-                seq_length = x.shape[1]  
-                seq_lens = torch.full((batch_size,), seq_length, dtype=torch.long)
-                
-                # reg_output = model(x, seq_lens)
                 reg_output = model(x)
                 reg_loss = compute_reg_loss(reg_output, y_reg)
                 
